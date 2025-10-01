@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
+    <title>Document</title>
+</head>
+<body>
+    <input type="text" id="nama" placeholder="Tugas baru...">
+    <a href="" id="link" target="_blank"><p id="output">Instaram/</p></a>
+</body>
+
+<script>
+    let input = document.getElementById('nama');
+    let link = document.getElementById('link');
+
+    input.addEventListener('input', function(event) {
+        event.preventDefault();
+        let nilai = input.value;
+        let output = document.createElement('p');
+        link.href = 'https://instagram.com/' + nilai + '/';
+        link.textContent = 'instagram/' + nilai;
+    });
+</script>
+=======
+    <title>Test project</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <center>
+    <div>
+        <h1>Daftar Mahasiswa</h1>
+        <table border="1" cellpadding="40px">
+            <thead>
+                <tr>
+                    <th>NAMA</th>
+                    <th>NIM</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2" style="text-align: center;">
+                        <button id="tampilBtn">Tampilkan Data</button>
+                        <button id="hapusBtn">Hapus Data</button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    </center>
+    <script src="index.js"></script>
+</body>
+>>>>>>> 4be73ebc65398d9d289c2ba7f8c2ac80b04cc9d8
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi To-Do List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Aplikasi To-Do List</h1>
+            <div class="instructions">
+                <ul>
+                    <li>Masukkan tugas pada kolom, lalu klik <strong>Tambah</strong> untuk menambahkan ke daftar</li>
+                    <li>Klik <strong>Selesai</strong> untuk menandai tugas selesai, atau <strong>Batal</strong> untuk membatalkan status selesai</li>
+                    <li>Klik <strong>Hapus</strong> untuk menghapus tugas dari daftar</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-container">
+                <input type="text" id="taskInput" placeholder="Tulis tugas baru...">
+                <button class="btn btn-primary" id="addBtn">Tambah</button>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            Memproses...
+        </div>
+
+        <div class="task-list" id="taskList">
+        </div>
+    </div>
+
+    <script>
+        class Task {
+            constructor(id, text, completed = false) {
+                this.id = id;
+                this.text = text;
+                this.completed = completed;
+                this.createdAt = new Date();
+            }
+
+            toggleCompleted() {
+                this.completed = !this.completed;
+            }
+        }
+
+        class TodoList {
+            constructor() {
+                this.tasks = []; 
+                this.currentId = 1;
+                this.taskListElement = document.getElementById('taskList');
+                this.taskInput = document.getElementById('taskInput');
+                this.addBtn = document.getElementById('addBtn');
+                this.loadingIndicator = document.getElementById('loadingIndicator');
+                
+                this.init();
+            }
+
+            init() {
+                this.addBtn.addEventListener('click', () => this.handleAddTask());
+                this.renderTasks();
+            }
+
+            showLoading() {
+                this.loadingIndicator.style.display = 'block';
+                this.addBtn.disabled = true;
+                this.taskInput.disabled = true;
+            }
+
+            hideLoading() {
+                this.loadingIndicator.style.display = 'none';
+                this.addBtn.disabled = false;
+                this.taskInput.disabled = false;
+            }
+
+            addTaskAsync(taskText) {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        if (taskText.trim()) {
+                            const newTask = new Task(this.currentId++, taskText.trim());
+                            this.tasks.push(newTask);
+                            resolve(newTask);
+                        } else {
+                            reject(new Error('Task text cannot be empty'));
+                        }
+                    }, 1000); 
+                });
+            }
+
+            deleteTaskAsync(taskId) {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        const taskIndex = this.tasks.findIndex(task => task.id === taskId);
+                        if (taskIndex !== -1) {
+                            const deletedTask = this.tasks.splice(taskIndex, 1)[0];
+                            resolve(deletedTask);
+                        } else {
+                            reject(new Error('Task not found'));
+                        }
+                    }, 800);
+                });
+            }
+
+            async handleAddTask() {
+                const taskText = this.taskInput.value;
+                
+                if (!taskText.trim()) {
+                    alert('Mohon masukkan teks tugas!');
+                    return;
+                }
+
+                try {
+                    this.showLoading();
+                    await this.addTaskAsync(taskText);
+                    this.taskInput.value = '';
+                    this.renderTasks();
+                } catch (error) {
+                    console.error('Error menambah tugas:', error.message);
+                    alert('Gagal menambah tugas: ' + error.message);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+            async handleDeleteTask(taskId) {
+                try {
+                    this.showLoading();
+                    await this.deleteTaskAsync(taskId);
+                    this.renderTasks();
+                } catch (error) {
+                    console.error('Error menghapus tugas:', error.message);
+                    alert('Gagal menghapus tugas: ' + error.message);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            toggleTaskCompleted(taskId) {
+                const task = this.tasks.find(task => task.id === taskId);
+                if (task) {
+                    task.toggleCompleted();
+                    this.renderTasks();
+                }
+            }
+
+            createTaskElement(task) {
+                const taskItem = document.createElement('div');
+                taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
+                
+                const taskText = document.createElement('span');
+                taskText.className = `task-text ${task.completed ? 'completed' : ''}`;
+                taskText.textContent = task.text;
+
+                const taskActions = document.createElement('div');
+                taskActions.className = 'task-actions';
+
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'btn btn-success';
+                toggleBtn.textContent = task.completed ? 'Batal' : 'Selesai';
+                toggleBtn.onclick = () => this.toggleTaskCompleted(task.id);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger';
+                deleteBtn.textContent = 'Hapus';
+                deleteBtn.onclick = () => {
+                    if (confirm(`Yakin ingin menghapus tugas "${task.text}"?`)) {
+                        this.handleDeleteTask(task.id);
+                    }
+                };
+
+                taskActions.appendChild(toggleBtn);
+                taskActions.appendChild(deleteBtn);
+
+                taskItem.appendChild(taskText);
+                taskItem.appendChild(taskActions);
+
+                return taskItem;
+            }
+
+            renderTasks() {
+                this.taskListElement.innerHTML = '';
+
+                if (this.tasks.length === 0) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state';
+                    emptyState.textContent = 'Belum ada tugas. Tambahkan tugas pertama Anda!';
+                    this.taskListElement.appendChild(emptyState);
+                    return;
+                }
+
+                const sortedTasks = [...this.tasks].sort((a, b) => {
+                    if (a.completed === b.completed) {
+                        return b.id - a.id; 
+                    }
+                    return a.completed - b.completed; 
+                });
+
+                sortedTasks.forEach(task => {
+                    const taskElement = this.createTaskElement(task);
+                    this.taskListElement.appendChild(taskElement);
+                });
+            }
+
+            getTaskStats() {
+                const total = this.tasks.length;
+                const completed = this.tasks.filter(task => task.completed).length;
+                const pending = total - completed;
+                
+                return { total, completed, pending };
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const todoApp = new TodoList();
+            window.todoApp = todoApp;
+        });
+    </script>
+</body>
+</html>
